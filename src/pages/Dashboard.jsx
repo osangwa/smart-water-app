@@ -15,6 +15,31 @@ export default function Dashboard() {
     const [leakageRisk, setLeakageRisk] = useState('Low');
     const [timeOfDay, setTimeOfDay] = useState('');
 
+    const calculatePredictedBill = (litres) => {
+        const cubicMeters = litres / 1000;
+        let remaining = cubicMeters;
+        let bill = 0;
+
+        if (remaining <= 0) return 0;
+
+        const blocks = [
+            { limit: 5, rate: 340 },
+            { limit: 15, rate: 720 },  // 6–20
+            { limit: 30, rate: 845 },  // 21–50
+            { limit: Infinity, rate: 877 } // Above 50
+        ];
+
+        for (const block of blocks) {
+            const used = Math.min(remaining, block.limit);
+            bill += used * block.rate;
+            remaining -= used;
+            if (remaining <= 0) break;
+        }
+
+        return bill.toFixed(2);
+    };
+
+
     useEffect(() => {
         const getTimeOfDay = () => {
             const hour = new Date().getHours();
@@ -67,6 +92,8 @@ export default function Dashboard() {
         fetch_details()
         setInterval(() => fetch_details(), 2000)
     }, []);
+
+    const predictedBill = calculatePredictedBill(waterUsage);
 
     return (
         <div className="flex h-screen bg-gray-100">
@@ -130,10 +157,27 @@ export default function Dashboard() {
                                     </div>
                                 </div>
 
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                                
+                                                                  {/* Predicted Bill Section */}
+                                                                  <div className="p-6 mt-8 bg-white rounded-2xl shadow-lg">
+                                        <h2 className="mb-4 text-2xl font-semibold text-gray-800">Predicted Monthly Bill</h2>
+                                        <div className="text-center">
+                                            <p className="text-4xl font-bold text-blue-700">
+                                                {predictedBill} Rwf
+                                            </p>
+                                            <p className="text-gray-500 mt-1 text-sm">based on current usage</p>
+                                        </div>
+                                    </div>
+                                
+
+
+
                                 {/* Recommendations Section */}
                                 <div className="p-6 mt-8 bg-white rounded-2xl shadow-lg">
                                     <h2 className="mb-4 text-2xl font-semibold text-gray-800">Recommendations</h2>
                                     {alerts != 0 ? <Recommendation /> : <div className='py-5 text-lg font-semibold text-center text-gray-500'>No Recommendations at this momment</div>}
+                                </div>
                                 </div>
 
                                 {/* Usage graph */}
